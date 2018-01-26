@@ -2,7 +2,7 @@
     "name": "denngarr/seat-scripts",
     "description": "A module for SeAT that contains useful command-line scripts",
     "type": "seat-plugin",
-    "license": "GPL-2.0",
+    "license": "GPL-2.0-only",
     "authors": [
         {
             "name": "Denngarr B'tarn",
