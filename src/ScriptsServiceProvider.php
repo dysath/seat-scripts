@@ -2,8 +2,8 @@
 
 namespace Denngarr\Seat\SeatScripts;
 
-use Denngarr\Seat\SeatScripts\Commands\InsuranceUpdate;
 use Illuminate\Support\ServiceProvider;
+use Denngarr\Seat\SeatScripts\Commands\seatScriptsUsersUpdate;
 
 class ScriptsServiceProvider extends ServiceProvider
 {
