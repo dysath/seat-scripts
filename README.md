@@ -13,17 +13,21 @@ This script will search each user and based on the API keys they own, will be ad
 ### Installation
 
 From the command-line, run:
+
 	composer require denngarr/seat-scripts
 
 Edit config/app.php
+
 	In the Package Service Providers block, add:
 
         Denngarr\Seat\SeatScripts\ScriptsServiceProvider::class
 
 Then from the command-line, run:
+
 	php artisan vendor:publish --force
 
 Now, if you run:
+
 	php artisan
 
 You should see the new command(s) added.  These commands will also show up in the scheduler.
