@@ -9,20 +9,21 @@ namespace Denngarr\Seat\SeatScripts\Commands;
 
 use DB;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Redis;
-use Seat\Services\Repositories\Configuration\UserRespository;
 use Seat\Web\Models\User;
+use Seat\Web\Models\Group;
 use Seat\Web\Models\Acl\Role;
+use Seat\Web\Models\Acl\GroupRole;
 use Seat\Web\Acl\AccessManager;
-use Seat\Eveapi\Models\Character\CharacterSheet;
+use Seat\Eveapi\Models\Character\CharacterInfo;
+use Seat\Eveapi\Models\Corporation\CorporationInfo;
 
 class seatScriptsUsersUpdate extends Command
 {
     use AccessManager;
 
-    protected $signature = 'seat-scripts:users:update';
+    protected $signature = 'seat-scripts:users:corproles';
 
-    protected $description = 'Sync users with Seat Roles by corporation and titles';
+    protected $description = 'Sync users with Seat Roles by corporation';
 
     public function __construct()
     {
@@ -31,42 +32,45 @@ class seatScriptsUsersUpdate extends Command
 
     public function handle()
     {
+        $corp_list = [];
+        $all_corps = CorporationInfo::all();
 
-        $userList = User::all();
-        $roleList = Role::all();
-
-        foreach ($userList as $user) {
-            $corpList = [];
-            $keys = $user->keys;
-            $roles = $user->roles;
-
-            foreach ($keys as $key) {
-                $characters = $key->characters;
-                foreach ($characters as $character) {
-                    $corpList[$character->corporationName] = true;
-
-                    $charSheet = CharacterSheet::find($character->characterID);
-                    $titles = $charSheet->corporation_titles;
-
-
-                    if (count($titles) > 0) {
-                        $corpList[strip_tags($titles[0]->titleName)] = true;
-                    }
-                }
+        // Get the List of Roles with the same names as the corporations
+        foreach ($all_corps as $corp) {
+            $role = Role::where('title', $corp->name)->first();
+            if ($role != null) {
+                $corp_list[$corp->name] = $corp->corporation_id;
             }
-            foreach ($roles as $role) {
-                if (isset($corpList[$role->title])) {
-                    unset($corpList[$role->title]);
-                }
+        }
+        
+        // Get the Group_IDs for each character/user
+        foreach ($corp_list as $corp => $id) {
+            $corpgroups = [];
+            $rolegroups = [];
+            $characters = CharacterInfo::where('corporation_id', $id)->get();
+            foreach ($characters as $character) {
+                $user = User::where('id', $character->character_id)->first();
+                array_push($corpgroups, $user->group_id);
             }
-            if (count($corpList) > 0) {
-                foreach ($corpList as $corp => $val) {
-                   $role = Role::where('title', $corp)->first();
-                   if (isset($role->title)) {
-                       echo "I, $user->name, need to be assigned the role for: $role->title\n";
-                       $this->giveUsernamesRole([$user->name], $role->id);
-                   }
-                }
+            // Uniq the groups.  Only need one.
+            $corpgroups = array_unique($corpgroups);
+
+            $role = Role::where('title', $corp)->first();
+            $grouproles = $role->groups;
+
+            foreach ($grouproles as $grouprole) {
+              array_push($rolegroups, $grouprole->id);
+            }
+
+            $add_groups = array_diff($corpgroups, $rolegroups);
+            $remove_groups = array_diff($rolegroups, $corpgroups);
+
+            foreach ($add_groups as $group) {
+                $role->groups()->attach($group);
+            }
+
+            foreach ($remove_groups as $group) {
+                $role->groups()->detach($group);
             }
         }
     }

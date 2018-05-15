@@ -34,7 +34,7 @@ class ScriptsServiceProvider extends ServiceProvider
     private function addCommands()
     {
         $this->commands([
-            seatScriptsUsersUpdate::class,
+            seatScriptsUsersUpdate::class
         ]);
     }
 }
