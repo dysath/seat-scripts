@@ -50,7 +50,9 @@ class seatScriptsUsersUpdate extends Command
             $characters = CharacterInfo::where('corporation_id', $id)->get();
             foreach ($characters as $character) {
                 $user = User::where('id', $character->character_id)->first();
-                array_push($corpgroups, $user->group_id);
+                if ($user != null) {
+                    array_push($corpgroups, $user->group_id);
+                }
             }
             // Uniq the groups.  Only need one.
             $corpgroups = array_unique($corpgroups);
